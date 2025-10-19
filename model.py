@@ -2,6 +2,8 @@ import pandas as pd
 import re
 from sklearn.model_selection import train_test_split
 
+from sklearn.linear_model import LogisticRegression
+
 print("Step 1: Loading and preparing data...")
 
 csv_file_name = "phishing_site_urls.csv"
@@ -43,7 +45,7 @@ df['label_numeric'] = df['label'].apply(lambda label:1 if label == 'bad' else 0)
 y = df['label_numeric']
 
 print("Data preparation complete.")
-print("\n" + "-"*25 + "\n")
+print("\n" + "-" * 25 + "\n")
 
 print("Step 2: Splitting data into training and testing sets...")
 
@@ -56,3 +58,13 @@ print(f"Shape of training features (X_train): {X_train.shape}")
 print(f"Shape of testing features (X_test):  {X_test.shape}")
 print(f"Shape of training labels (y_train): {y_train.shape}")
 print(f"Shape of testing labels (y_test):  {y_test.shape}")
+
+print("\n" + "-" * 25 + "\n")
+
+print("Step 3: Training the model...")
+
+model = LogisticRegression(max_iter=1000)
+
+model.fit(X_train, y_train)
+
+print("Model Training Complete!")
