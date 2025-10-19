@@ -1,7 +1,8 @@
 import pandas as pd
 import re
-from sklearn.model_selection import train_test_split
 
+from urllib.parse import urlparse
+from sklearn.model_selection import train_test_split
 import xgboost as xgb
 from sklearn.metrics import accuracy_score
 import joblib
@@ -35,12 +36,37 @@ def has_ip_address(url):
 def get_dot_count(url):
     return str(url).count(".")
 
+def count_suspicious_keywords(url):
+    keywords = ['login', 'verify', 'account', 'security', 'update', 'signin', 'banking', 'confirm']
+    count = 0
+    for keyword in keywords:
+        if keyword in str(url).lower():
+            count += 1
+    return count
+
+def count_special_chars(url):
+    special_chars = ['-', '/', '?', '=', '.']
+    count = 0
+    for char in special_chars:
+        count += str(url).count(char)
+    return count
+
+def has_hyphen_in_domain(url):
+    try:
+        domain = urlparse(str(url)).netloc
+        return 1 if '-' in domain else 0
+    except:
+        return 0
+
 df["url_length"] = df['url'].apply(get_url_length)
 df['has_at'] = df['url'].apply(has_at_symbol)
 df['has_ip'] = df['url'].apply(has_ip_address)
 df['dot_count'] = df['url'].apply(get_dot_count)
+df['suspicious_keywords'] = df['url'].apply(count_suspicious_keywords)
+df['special_chars'] = df['url'].apply(count_special_chars)
+df['hyphen_in_domain'] = df['url'].apply(has_hyphen_in_domain)
 
-feature_columns = ['url_length', 'has_at', 'has_ip', 'dot_count']
+feature_columns = ['url_length', 'has_at', 'has_ip', 'dot_count', 'suspicious_keywords', 'special_chars', 'hyphen_in_domain']
 
 X = df[feature_columns]
 df['label_numeric'] = df['label'].apply(lambda label:1 if label == 'bad' else 0)

@@ -4,6 +4,8 @@ import joblib
 import pandas as pd
 import re
 
+from urllib.parse import urlparse
+
 app = Flask(__name__)
 
 CORS(app)
@@ -15,12 +17,40 @@ model = joblib.load(model_filename)
 
 print("Model loaded successfully.")
 
-def get_url_length(url): return len(str(url))
-def has_at_symbol(url): return 1 if "@" in str(url) else 0
+def get_url_length(url): 
+    return len(str(url))
+
+def has_at_symbol(url): 
+    return 1 if "@" in str(url) else 0
+
 def has_ip_address(url):
     match = re.search(r'(([01]?\d\d?|2[0-4]\d|25[0-5])\.){3}([01]?\d\d?|2[0-4]\d|25[0-5])', str(url))
     return 1 if match else 0
-def get_dot_count(url): return str(url).count(".")
+
+def get_dot_count(url): 
+    return str(url).count(".")
+
+def count_suspicious_keywords(url):
+    keywords = ['login', 'verify', 'account', 'security', 'update', 'signin', 'banking', 'confirm']
+    count = 0
+    for keyword in keywords:
+        if keyword in str(url).lower():
+            count += 1
+    return count
+
+def count_special_chars(url):
+    special_chars = ['-', '/', '?', '=', '.']
+    count = 0
+    for char in special_chars:
+        count += str(url).count(char)
+    return count
+
+def has_hyphen_in_domain(url):
+    try:
+        domain = urlparse(str(url)).netloc
+        return 1 if '-' in domain else 0
+    except:
+        return 0
 
 @app.route("/")
 
@@ -43,8 +73,12 @@ def predict():
     url_df['has_at'] = url_df['url'].apply(has_at_symbol)
     url_df['has_ip'] = url_df['url'].apply(has_ip_address)
     url_df['dot_count'] = url_df['url'].apply(get_dot_count)
+    url_df['suspicious_keywords'] = url_df['url'].apply(count_suspicious_keywords)
+    url_df['special_chars'] = url_df['url'].apply(count_special_chars)
+    url_df['hyphen_in_domain'] = url_df['url'].apply(has_hyphen_in_domain)
 
-    feature_columns = ["url_length", "has_at", "has_ip", "dot_count"]
+    feature_columns = ["url_length", "has_at", "has_ip", "dot_count", 'suspicious_keywords', 'special_chars', 'hyphen_in_domain'
+    ]
     features = url_df[feature_columns]
 
     print(f"DEBUG: Features sent to model: {features.to_dict(orient="records")}")
