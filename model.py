@@ -8,6 +8,7 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score
 import joblib
 
+
 print("Step 1: Loading and preparing data...")
 
 csv_file_name = "phishing_site_urls.csv"
@@ -59,6 +60,18 @@ def has_hyphen_in_domain(url):
     except:
         return 0
 
+
+def get_domain_age(domain_name):
+    try:
+        w = whois.whois(domain_name)
+        creation_date = w.creation_date
+        
+        if isinstance(creation_date, list):
+            creation_date = creation_date[0]
+        return age
+    except:
+        return 0
+
 df["url_length"] = df['url'].apply(get_url_length)
 df['has_at'] = df['url'].apply(has_at_symbol)
 df['has_ip'] = df['url'].apply(has_ip_address)
@@ -66,8 +79,10 @@ df['dot_count'] = df['url'].apply(get_dot_count)
 df['suspicious_keywords'] = df['url'].apply(count_suspicious_keywords)
 df['special_chars'] = df['url'].apply(count_special_chars)
 df['hyphen_in_domain'] = df['url'].apply(has_hyphen_in_domain)
+df['domain_name'] = df['url'].apply(lambda url: urlparse(url).netloc)
+df['domain_age'] = df['domain_name'].apply(get_domain_age)
 
-feature_columns = ['url_length', 'has_at', 'has_ip', 'dot_count', 'suspicious_keywords', 'special_chars', 'hyphen_in_domain']
+feature_columns = ['url_length', 'has_at', 'has_ip', 'dot_count', 'suspicious_keywords', 'special_chars', 'hyphen_in_domain', 'domain_age']
 
 X = df[feature_columns]
 df['label_numeric'] = df['label'].apply(lambda label:1 if label == 'bad' else 0)
