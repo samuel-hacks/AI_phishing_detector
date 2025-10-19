@@ -2,7 +2,8 @@ import pandas as pd
 import re
 
 from urllib.parse import urlparse
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
+
 import xgboost as xgb
 from sklearn.metrics import accuracy_score
 import joblib
@@ -84,19 +85,25 @@ X_train, X_test, y_train, y_test = train_test_split(
 print("Data split complete.")
 print("\n" + "-" * 25 + "\n")
 
-print("Step 3: Training the model...")
+print("Step 3: Starting Hyperparameter Tuning...")
 
-model = xgb.XGBClassifier(
-    n_estimators = 100,
-    learning_rate = 0.1,
-    use_label_encoder = False,
-    eval_metric = "logloss",
-    random_state = 42
-)
+param_grid = {
+    "max_depth": [3,5],
+    "n_estimators": [100, 200],
+    "learning_rate": [0.1, 0.05]
+}
 
-model.fit(X_train, y_train)
-print("Model Training Complete!")
-print("\n" + "-"*25 + "\n")
+xgb_model = xgb.XGBClassifier(use_label_encoder = False, eval_metric = "logloss", random_state = 42)
+
+grid_search = GridSearchCV(estimator = xgb_model, param_grid = param_grid, cv = 3, n_jobs=-1, verbose = 2)
+
+grid_search.fit(X_train, y_train)
+
+model = grid_search.best_estimator_
+
+print("Hyperparameter tuning complete.")
+print(f"Best parameters found: {grid_search.best_params_}")
+print("\n" + "-" * 25 + "\n")
 
 print("Step 4: Evaluating the model...")
 
