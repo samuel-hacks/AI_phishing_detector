@@ -52,6 +52,22 @@ def has_hyphen_in_domain(url):
     except:
         return 0
 
+def get_entropy(text):
+    text = str(text)
+    if not text: return 0
+    p, lns = Counter(text), float(len(text))
+    return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
+
+def count_numeric_chars(url):
+    return sum(c.isdigit() for c in str(url))
+
+def vowel_consonant_ratio(url):
+    vowels = "aeiouAEIOU"
+    consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+    v_count = sum(1 for char in str(url) if char in vowels)
+    c_count = sum(1 for char in str(url) if char in consonants)
+    if c_count == 0: return 0
+    return v_count / c_count
 @app.route("/")
 
 def home():
@@ -77,8 +93,11 @@ def predict():
     url_df['special_chars'] = url_df['url'].apply(count_special_chars)
     url_df['hyphen_in_domain'] = url_df['url'].apply(has_hyphen_in_domain)
 
-    feature_columns = ["url_length", "has_at", "has_ip", "dot_count", 'suspicious_keywords', 'special_chars', 'hyphen_in_domain'
-    ]
+    df['entropy'] = df['url'].apply(get_entropy)
+    df['numeric_chars'] = df['url'].apply(count_numeric_chars)
+    df['vowel_consonant_ratio'] = df['url'].apply(vowel_consonant_ratio)
+
+    feature_columns = ["url_length", "has_at", "has_ip", "dot_count", 'suspicious_keywords', 'special_chars', 'hyphen_in_domain', 'entropy', 'numeric_chars', 'vowel_consonant_ratio']
     features = url_df[feature_columns]
 
     print(f"DEBUG: Features sent to model: {features.to_dict(orient="records")}")

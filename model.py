@@ -8,6 +8,9 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score
 import joblib
 
+import math
+from collections import Counter
+
 
 print("Step 1: Loading and preparing data...")
 
@@ -16,6 +19,12 @@ csv_file_name = "phishing_site_urls.csv"
 try:
     df = pd.read_csv(csv_file_name)
     df = df.rename(columns = {"URL": "url", "Label": "label"})
+
+    df.dropna(subset=["url"], inplace = True)
+
+    df['url'] = df['url'].astype(str)
+
+    print("Dataset loaded and cleaned successfully!")
 
 except FileNotFoundError:
     print(f"Error: Dataset '{csv_file_name}' not found.")
@@ -61,16 +70,26 @@ def has_hyphen_in_domain(url):
         return 0
 
 
-def get_domain_age(domain_name):
-    try:
-        w = whois.whois(domain_name)
-        creation_date = w.creation_date
-        
-        if isinstance(creation_date, list):
-            creation_date = creation_date[0]
-        return age
-    except:
+def get_entropy(text):
+    text = str(text)
+
+    if not text:
         return 0
+    
+    p, lns = Counter(text), float(len(text))
+    return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
+
+def count_numeric_chars(url):
+    return sum(c.isdigit() for c in str(url))
+
+def vowel_consonant_ratio(url):
+    vowels = "aeiouAEIOU"
+    consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+    v_count = sum(1 for char in str(url) if char in vowels)
+    c_count = sum(1 for char in str(url) if char in consonants)
+    if c_count == 0:
+        return 0
+    return v_count / c_count
 
 df["url_length"] = df['url'].apply(get_url_length)
 df['has_at'] = df['url'].apply(has_at_symbol)
@@ -79,10 +98,13 @@ df['dot_count'] = df['url'].apply(get_dot_count)
 df['suspicious_keywords'] = df['url'].apply(count_suspicious_keywords)
 df['special_chars'] = df['url'].apply(count_special_chars)
 df['hyphen_in_domain'] = df['url'].apply(has_hyphen_in_domain)
-df['domain_name'] = df['url'].apply(lambda url: urlparse(url).netloc)
-df['domain_age'] = df['domain_name'].apply(get_domain_age)
 
-feature_columns = ['url_length', 'has_at', 'has_ip', 'dot_count', 'suspicious_keywords', 'special_chars', 'hyphen_in_domain', 'domain_age']
+df['entropy'] = df['url'].apply(get_entropy)
+df['numeric_chars'] = df['url'].apply(count_numeric_chars)
+df['vowel_consonant_ratio'] = df['url'].apply(vowel_consonant_ratio)
+
+feature_columns = ['url_length', 'has_at', 'has_ip', 'dot_count', 'suspicious_keywords', 'special_chars', 'hyphen_in_domain',
+                    'entropy', 'numeric_chars', 'vowel_consonant_ratio']
 
 X = df[feature_columns]
 df['label_numeric'] = df['label'].apply(lambda label:1 if label == 'bad' else 0)
