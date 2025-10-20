@@ -20,6 +20,7 @@ model = joblib.load(model_filename)
 
 print("Model loaded successfully.")
 
+
 API_KEY = "AIzaSyAnC9Hwi6YQwL6G8bxb1YEKdTQxlv5Vygo"
 GSB_CACHE_FILE = "gsb_cache.json"
 
