@@ -12,7 +12,7 @@ CORS(app)
 
 print("Loading the model...")
 
-model_filename = "phishing_model.joblib"
+model_filename = 'phishing_model.joblib'
 model = joblib.load(model_filename)
 
 print("Model loaded successfully.")
