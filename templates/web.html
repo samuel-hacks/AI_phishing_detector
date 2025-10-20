@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang = "en">
+    <head>
+        <meta charset = "UTF-8">
+        <meta name = "viewport" content = "width = device-width, initial-scale = 1.0">
+        
+        <title> PHISHING URL Detector using AI </title>
+
+        <style>
+            body {
+                font-family: sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f4f4f9;
+                margin: 0;
+            }.container{
+             background: white;
+             padding: 2rem;
+             border-radius: 8px;
+             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+             text-align: center;   
+            }
+            input[type="text"]{
+                    width: 300px;
+                    padding: 0.5rem;
+                    margin-bottom: 1rem;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
+            button{
+                padding: 0.5rem 1.5rem;
+                border: none;
+                background-color: #007bff;
+                color: white;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            #result{
+                margin-top: 1.5rem;
+                font-size: 1.2rem;
+                font-weight: bold;
+            }
+            .good{color: green;}
+            .bad{color: red;}
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>PHISHING URL Detector using AI</h1>
+            <form id="urlForm">
+                <input type="text" id="urlInput" placeholder="Enter a URL to check..." required>
+                <br>
+                <button type="submit">Check URL</button>
+            </form>
+            <div id="result"></div>
+        </div>
+
+        <script>
+        const form = document.getElementById('urlForm');
+        const urlInput = document.getElementById('urlInput');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', function(event) {
+            
+            event.preventDefault();
+            
+            const urlToCheck = urlInput.value;
+            resultDiv.textContent = 'Checking...';
+            resultDiv.className = '';
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: urlToCheck })
+            })
+            .then(response => response.json())
+            .then(data => {
+                
+                resultDiv.textContent = `Result: ${data.prediction.toUpperCase()}`;
+                
+                resultDiv.classList.add(data.prediction);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.textContent = 'Error checking URL.';
+                resultDiv.className = 'bad';
+            });
+        });  
+        </script>
+    </body>
+</html>
