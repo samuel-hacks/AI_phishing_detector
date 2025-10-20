@@ -11,6 +11,10 @@ import joblib
 import math
 from collections import Counter
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import StackingClassifier
 
 print("Step 1: Loading and preparing data...")
 
@@ -122,38 +126,34 @@ X_train, X_test, y_train, y_test = train_test_split(
 print("Data split complete.")
 print("\n" + "-" * 25 + "\n")
 
-print("Step 3: Starting Hyperparameter Tuning...")
+print("Step 3: Training the Stack Classifier...")
 
-param_grid = {
-    "max_depth": [3,5],
-    "n_estimators": [100, 200],
-    "learning_rate": [0.1, 0.05]
-}
+base_models = [
+    ("xgb", xgb.XGBClassifier(use_label_encoder = False, eval_metric = "logloss", random_state = 42)),
+    ("rf", RandomForestClassifier(n_estimators = 50, random_state = 42)),
+    ("mlp", MLPClassifier(hidden_layer_sizes=(100, ), max_iter = 300, random_state = 42)) 
+    ]
+meta_model = LogisticRegression()
 
-xgb_model = xgb.XGBClassifier(use_label_encoder = False, eval_metric = "logloss", random_state = 42)
+stacked_model = StackingClassifier(estimators = base_models, final_estimator = meta_model, cv = 3)
 
-grid_search = GridSearchCV(estimator = xgb_model, param_grid = param_grid, cv = 3, n_jobs=-1, verbose = 2)
+stacked_model.fit(X_train, y_train)
 
-grid_search.fit(X_train, y_train)
+print("Model training complete.")
+print("\n" + "-"*25 + "\n")
 
-model = grid_search.best_estimator_
+print("Step 4: Evaluating the stacked model...")
 
-print("Hyperparameter tuning complete.")
-print(f"Best parameters found: {grid_search.best_params_}")
-print("\n" + "-" * 25 + "\n")
-
-print("Step 4: Evaluating the model...")
-
-predictions = model.predict(X_test)
+predictions = stacked_model.predict(X_test)
 accuracy = accuracy_score(y_test, predictions)
-print(f"Model Accuracy: {accuracy * 100:.2f}%")
+print(f"Stacked Model Accuracy: {accuracy * 100:.2f}%")
 
 print("\n" + "-"*25 + "\n")
 
 print("Step 5: Saving the model...")
 
 model_filename = 'phishing_model.joblib'
-joblib.dump(model, model_filename)
+joblib.dump(stacked_model, model_filename)
 print(f"Model saved to {model_filename}")
 
 print("\n" + "=" * 50)
